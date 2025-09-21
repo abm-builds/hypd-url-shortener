@@ -481,4 +481,4 @@ Built for the HYPD internship assignment, showcasing modern backend development 
 
 **Live Demo**: https://hypd-url-shortener.onrender.com  
 **API Documentation**: https://hypd-url-shortener.onrender.com/api/v1  
-**GitHub Repository**: https://github.com/your-username/hypd-url-shortener
+**GitHub Repository**: https://github.com/abm-builds/hypd-url-shortener
