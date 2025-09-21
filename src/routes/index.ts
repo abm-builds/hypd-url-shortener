@@ -13,7 +13,11 @@ router.get('/', (req, res) => {
     version: config.apiVersion,
     endpoints: {
       urls: `${config.baseUrl}/api/${config.apiVersion}/urls`,
-      analytics: `${config.baseUrl}/api/${config.apiVersion}/analytics`,
+      analytics: {
+        summary: `${config.baseUrl}/api/${config.apiVersion}/analytics/summary`,
+        top: `${config.baseUrl}/api/${config.apiVersion}/analytics/top`,
+        individual: `${config.baseUrl}/api/${config.apiVersion}/urls/:shortCode/analytics`
+      },
       health: `${config.baseUrl}/health`
     },
     documentation: {
