@@ -67,11 +67,18 @@ export const errorHandler = (
     error = new CustomError('External service unavailable', 503);
   }
 
-  res.status(error.statusCode || 500).json({
+  // Prepare response based on environment
+  const response: any = {
     success: false,
-    error: error.message || 'Server Error',
-    ...(config.nodeEnv === 'development' && { stack: err.stack })
-  });
+    error: error.message || 'Server Error'
+  };
+
+  // Only include stack trace in development
+  if (config.nodeEnv === 'development') {
+    response.stack = err.stack;
+  }
+
+  res.status(error.statusCode || 500).json(response);
 };
 
 // Async error handler wrapper

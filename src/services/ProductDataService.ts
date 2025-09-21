@@ -3,6 +3,7 @@ import { ScrapingService } from './ScrapingService';
 import { UrlModel } from '../models/UrlModel';
 import { ProductDataResponse } from '../types';
 import { pool } from '../config/database';
+import { CustomError } from '../middleware/errorHandler';
 
 export class ProductDataService {
   /**
@@ -19,7 +20,7 @@ export class ProductDataService {
 
       // Check if it's a HYPD product
       if (!urlRecord.is_hypd_product) {
-        throw new Error('URL is not a HYPD product');
+        throw new CustomError('URL is not a HYPD product', 400);
       }
 
       // Check if product data already exists
@@ -42,8 +43,14 @@ export class ProductDataService {
 
     } catch (error) {
       console.error('Error scraping and storing product data:', error);
+      
+      // If it's already a CustomError, re-throw it
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to get product data: ${errorMessage}`);
+      throw new CustomError(`Failed to get product data: ${errorMessage}`, 500);
     }
   }
 
@@ -75,7 +82,7 @@ export class ProductDataService {
       const urlRecord = await UrlModel.getUrlByShortCode(shortCode);
       
       if (!urlRecord || !urlRecord.is_hypd_product) {
-        throw new Error('URL is not a HYPD product');
+        throw new CustomError('URL is not a HYPD product', 400);
       }
 
       // Scrape fresh data
@@ -88,8 +95,14 @@ export class ProductDataService {
 
     } catch (error) {
       console.error('Error refreshing product data:', error);
+      
+      // If it's already a CustomError, re-throw it
+      if (error instanceof CustomError) {
+        throw error;
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to refresh product data: ${errorMessage}`);
+      throw new CustomError(`Failed to refresh product data: ${errorMessage}`, 500);
     }
   }
 
