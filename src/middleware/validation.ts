@@ -13,8 +13,8 @@ export const createShortUrlSchema = Joi.object({
 });
 
 export const shortCodeSchema = Joi.object({
-  shortCode: Joi.string().alphanum().min(4).max(10).required().messages({
-    'string.alphanum': 'Short code must contain only alphanumeric characters',
+  shortCode: Joi.string().pattern(/^[a-zA-Z0-9_-]+$/).min(4).max(10).required().messages({
+    'string.pattern.base': 'Short code must contain only alphanumeric characters, hyphens, and underscores',
     'string.min': 'Short code must be at least 4 characters long',
     'string.max': 'Short code must be at most 10 characters long',
     'any.required': 'Short code is required'

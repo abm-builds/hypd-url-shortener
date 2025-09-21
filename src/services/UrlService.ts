@@ -81,6 +81,7 @@ export class UrlService {
       short_code: urlRecord.short_code,
       short_url: `${config.baseUrl}/${urlRecord.short_code}`,
       original_url: urlRecord.original_url,
+      is_hypd_product: urlRecord.is_hypd_product,
       expires_at: urlRecord.expires_at?.toISOString(),
       created_at: urlRecord.created_at.toISOString()
     };

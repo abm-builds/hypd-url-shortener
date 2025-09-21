@@ -15,6 +15,18 @@ export class UrlController {
 
     const result = await UrlService.createShortUrl(data);
 
+    // If it's a HYPD product, automatically scrape product data
+    if (result.is_hypd_product) {
+      try {
+        console.log('Auto-scraping product data for HYPD URL...');
+        await ProductDataService.scrapeAndStoreProductData(result.short_code);
+        console.log('Product data scraped successfully');
+      } catch (error) {
+        console.error('Failed to auto-scrape product data:', error);
+        // Don't fail the URL creation if scraping fails
+      }
+    }
+
     res.status(201).json({
       success: true,
       data: result

@@ -84,27 +84,51 @@ export class ScrapingService {
    */
   private static extractPrice($: cheerio.CheerioAPI): string | undefined {
     const selectors = [
-      '.price',
-      '.product-price',
-      '[data-testid="price"]',
-      '.current-price',
+      // HYPD specific selectors
+      '.price-current',
       '.selling-price',
+      '.product-price',
+      '.price-amount',
+      '[data-testid*="price"]',
+      '[class*="price"][class*="current"]',
+      '[class*="price"][class*="selling"]',
+      '[class*="price"][class*="amount"]',
+      // Generic selectors
+      '.price',
+      '.current-price',
       '.price-current',
       '[class*="price"]',
       'span[class*="price"]',
-      'div[class*="price"]'
+      'div[class*="price"]',
+      // Look for ₹ symbol
+      '*:contains("₹")',
+      // Look for price patterns
+      'span:contains("₹")',
+      'div:contains("₹")'
     ];
 
     for (const selector of selectors) {
       const element = $(selector).first();
       if (element.length && element.text().trim()) {
         const priceText = element.text().trim();
-        // Clean up price text
+        // Look for price patterns like ₹199, ₹1,999, etc.
+        const priceMatch = priceText.match(/₹\s*[\d,]+/);
+        if (priceMatch) {
+          return priceMatch[0].replace(/\s/g, '');
+        }
+        // Clean up price text for other formats
         const cleanedPrice = priceText.replace(/[^\d.,₹$]/g, '').trim();
-        if (cleanedPrice) {
+        if (cleanedPrice && /\d/.test(cleanedPrice)) {
           return cleanedPrice;
         }
       }
+    }
+
+    // Try to find price in any text containing currency symbols
+    const allText = $.text();
+    const priceMatches = allText.match(/₹\s*[\d,]+/g);
+    if (priceMatches && priceMatches.length > 0) {
+      return priceMatches[0].replace(/\s/g, '');
     }
 
     return undefined;
@@ -115,26 +139,72 @@ export class ScrapingService {
    */
   private static extractBrandName($: cheerio.CheerioAPI): string | undefined {
     const selectors = [
+      // HYPD specific selectors
+      '.brand-name',
+      '.product-brand',
+      '.seller-name',
+      '[data-testid*="brand"]',
+      '[data-testid*="seller"]',
+      '[class*="brand"]',
+      '[class*="seller"]',
+      // Generic selectors
       '.brand',
       '.product-brand',
       '[data-testid="brand"]',
-      '.brand-name',
-      '[class*="brand"]',
       'span[class*="brand"]',
-      'div[class*="brand"]'
+      'div[class*="brand"]',
+      'span[class*="seller"]',
+      'div[class*="seller"]'
     ];
 
     for (const selector of selectors) {
       const element = $(selector).first();
       if (element.length && element.text().trim()) {
-        return element.text().trim();
+        let brandText = element.text().trim();
+        
+        // Clean up common prefixes/suffixes
+        brandText = brandText
+          .replace(/^Fulfilled by\s+/i, '')
+          .replace(/^Visit\s+/i, '')
+          .replace(/\s+Visit store.*$/i, '')
+          .replace(/\s+Curated for you by.*$/i, '')
+          .replace(/Personal Touch\s*/i, '')
+          .replace(/Visit Brand\s*/i, '')
+          .replace(/\s+-\s+.*$/i, '') // Remove everything after ' - '
+          .replace(/\s+\d+ml.*$/i, '') // Remove '50ml' etc.
+          .replace(/\s+Pack of \d+.*$/i, '') // Remove 'Pack of 1' etc.
+          .trim();
+        
+        if (brandText && brandText.length > 2) {
+          return brandText;
+        }
       }
     }
 
     // Try to extract from product title if brand is part of it
     const title = this.extractProductName($);
     if (title && title.includes(' - ')) {
-      return title.split(' - ')[0].trim();
+      let brandFromTitle = title.split(' - ')[0].trim();
+      // Clean up the brand name from title
+      brandFromTitle = brandFromTitle
+        .replace(/\s+\d+ml.*$/i, '') // Remove '50ml' etc.
+        .replace(/\s+Pack of \d+.*$/i, '') // Remove 'Pack of 1' etc.
+        .replace(/\s+Deep\s+Cleansing.*$/i, '') // Remove 'Deep Cleansing' etc.
+        .replace(/\s+Facewash.*$/i, '') // Remove 'Facewash' etc.
+        .trim();
+      
+      if (brandFromTitle && brandFromTitle.length > 2) {
+        return brandFromTitle;
+      }
+    }
+
+    // Look for brand in meta tags
+    const brandMeta = $('meta[property="product:brand"]').attr('content') ||
+                     $('meta[name="brand"]').attr('content') ||
+                     $('meta[property="og:brand"]').attr('content');
+    
+    if (brandMeta) {
+      return brandMeta.trim();
     }
 
     return undefined;
@@ -145,19 +215,47 @@ export class ScrapingService {
    */
   private static extractFeaturedImage($: cheerio.CheerioAPI): string | undefined {
     const selectors = [
+      // HYPD specific selectors
+      '.product-image img',
+      '.main-product-image img',
+      '.featured-image img',
+      '.product-gallery img:first',
+      '.product-photos img:first',
+      '[data-testid*="product-image"] img',
+      '[data-testid*="main-image"] img',
+      '[class*="product"][class*="image"] img',
+      '[class*="featured"][class*="image"] img',
+      '[class*="main"][class*="image"] img',
+      // Generic selectors
       '.product-image img',
       '.featured-image img',
       '[data-testid="product-image"] img',
       '.main-image img',
       '.product-gallery img:first',
       '[class*="product"][class*="image"] img',
-      '[class*="featured"][class*="image"] img'
+      '[class*="featured"][class*="image"] img',
+      // Look for high-resolution images
+      'img[src*="product"]',
+      'img[src*="featured"]',
+      'img[src*="main"]',
+      // Meta tags
+      'meta[property="og:image"]',
+      'meta[property="product:image"]',
+      'link[rel="image_src"]'
     ];
 
     for (const selector of selectors) {
       const element = $(selector).first();
       if (element.length) {
-        let src = element.attr('src') || element.attr('data-src') || element.attr('data-lazy');
+        let src: string | undefined;
+        
+        // Handle different element types
+        if (element.is('img')) {
+          src = element.attr('src') || element.attr('data-src') || element.attr('data-lazy');
+        } else {
+          // For meta tags and links
+          src = element.attr('content') || element.attr('href');
+        }
         
         if (src) {
           // Convert relative URLs to absolute
@@ -167,7 +265,10 @@ export class ScrapingService {
             src = config.hypdBaseUrl + src;
           }
           
-          return src;
+          // Validate that it's an image URL
+          if (src.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+            return src;
+          }
         }
       }
     }

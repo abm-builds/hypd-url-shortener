@@ -9,7 +9,9 @@ export class UrlModel {
    */
   static async createShortUrl(data: CreateShortUrlRequest, isHypdProduct: boolean = false): Promise<UrlRecord> {
     const shortCode = nanoid(config.shortUrlLength);
-    const expiresAt = data.expires_at ? new Date(data.expires_at) : null;
+    const expiresAt = data.expires_at 
+      ? new Date(data.expires_at) 
+      : new Date(Date.now() + config.defaultExpiryDays * 24 * 60 * 60 * 1000);
     
     const query = `
       INSERT INTO urls (short_code, original_url, is_hypd_product, expires_at)

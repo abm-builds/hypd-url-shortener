@@ -8,6 +8,7 @@ const server = app.listen(config.port, () => {
   console.log(`🔗 Base URL: ${config.baseUrl}`);
 });
 
+
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');

@@ -40,6 +40,7 @@ export interface CreateShortUrlResponse {
   short_code: string;
   short_url: string;
   original_url: string;
+  is_hypd_product: boolean;
   expires_at?: string;
   created_at: string;
 }
