@@ -469,21 +469,13 @@ curl -I https://hypd-url-shortener.onrender.com/SHORT_CODE
 - **Logging**: Structured logging for debugging
 - **Documentation**: Inline code documentation
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit a Pull Request
-
 ## 📄 License
 
 This project is created for the HYPD internship assignment.
 
 ## 👨‍💻 Author
 
-Built with ❤️ for the HYPD internship assignment, showcasing modern backend development practices and problem-solving skills.
+Built for the HYPD internship assignment, showcasing modern backend development practices and problem-solving skills.
 
 ---
 
